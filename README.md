@@ -4,12 +4,12 @@
 
 ## 安装
 
-1. 如果拿到的是 ZIP，先把它解压到准备长期保留的位置。
+1. 从 [GitHub 发布页](https://github.com/MizukiShigure/suno-song-downloader/releases/latest) 下载最新版安装包，把 ZIP 解压到准备长期保留的位置。
 2. 在 Chrome 地址栏输入 `chrome://extensions`，或在 Edge 输入 `edge://extensions`，打开「开发者模式」。
 3. 点击「加载已解压的扩展程序」，选择直接包含 `manifest.json` 的 `suno-downloader` 文件夹。
 4. 在工具栏的扩展菜单里找到「Suno 单曲下载」，需要时可将它固定。
 
-已经从本目录安装过 1.0.0 的用户，在扩展管理页找到「Suno 单曲下载」，点击卡片上的重新加载按钮 ↻，然后刷新或重新打开 Suno 标签页。
+更新同一目录里的扩展文件后，在扩展管理页找到「Suno 单曲下载」，点击卡片上的重新加载按钮 ↻，然后刷新或重新打开 Suno 标签页。
 
 ## 保存歌曲
 
