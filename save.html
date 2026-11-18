@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>保存 Suno 歌曲</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="save.css">
+  <script type="module" src="save.js"></script>
+</head>
+<body><main>
+  <h1 id="title">保存 Suno 歌曲</h1>
+  <p id="summary" role="status" aria-live="polite">正在读取歌曲…</p>
+  <div class="actions">
+    <button id="save" type="button" disabled>准备中…</button>
+    <button id="stop" type="button" hidden>完成当前歌曲后停止</button>
+  </div>
+  <ol id="tracks" hidden></ol>
+</main></body>
+</html>

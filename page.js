@@ -1,4 +1,5 @@
-import { convert, explain, waitForDownload } from "./audio.js";
+import { convert, explain } from "./audio.js";
+import { saveAudio } from "./files.js";
 import { fetchAudio, filename, identify, lookup } from "./song.js";
 
 const el = id => document.getElementById(id);
@@ -9,6 +10,7 @@ const formats = result.querySelector("fieldset");
 const save = el("save");
 let song = null;
 let source = null;
+let prepared = null;
 
 function status(message = "", error = false) {
   el("status").textContent = message;
@@ -26,6 +28,8 @@ function busy(working) {
 function reset() {
   song = null;
   source = null;
+  prepared = null;
+  save.textContent = "保存 " + format().toUpperCase();
   result.hidden = true;
   status();
 }
@@ -66,6 +70,7 @@ const formatNotes = {
 };
 function format() { return formats.querySelector(":checked").value; }
 formats.addEventListener("change", () => {
+  prepared = null;
   save.textContent = "保存 " + format().toUpperCase();
   el("format-note").textContent = formatNotes[format()];
   status();
@@ -75,22 +80,23 @@ save.addEventListener("click", async () => {
   if (!song) return;
   busy(true);
   const target = format();
-  let url;
   try {
-    status("正在获取音频，请保持此页打开…");
-    source ??= await fetchAudio(song);
-    const file = target === "m4a" ? source : await convert(source, target, status);
-    const name = filename(song, target);
-    url = URL.createObjectURL(file);
+    if (!prepared) {
+      status("正在准备音频，请保持此页打开…");
+      source ??= await fetchAudio(song);
+      prepared = target === "m4a" ? source : await convert(source, target, status);
+      if (!navigator.userActivation.isActive) {
+        save.textContent = "选择位置并保存";
+        status("音频已就绪，请点击按钮选择保存位置。");
+        return;
+      }
+    }
     status("请选择保存位置…");
-    const id = await chrome.downloads.download({ url, filename: name, saveAs: true, conflictAction: "uniquify" });
-    status("正在保存文件…");
-    await waitForDownload(id);
-    status("已保存 " + target.toUpperCase() + " 文件。");
+    const name = await saveAudio(prepared, filename(song, target), target);
+    status("已保存 " + name);
   } catch (error) {
     status(explain(error), true);
   } finally {
-    if (url) URL.revokeObjectURL(url);
     busy(false);
   }
 });

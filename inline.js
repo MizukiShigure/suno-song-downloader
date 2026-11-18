@@ -4,7 +4,8 @@
   const linkSelector = 'a[href*="/song/"]';
   const watch = rowSelector + ", " + linkSelector + ", h1";
   const mounted = new Map();
-  const pending = new Map();
+  const checked = new Map();
+  let opening = false;
   let frame = 0;
   let selected;
   let trigger;
@@ -38,7 +39,7 @@
     button.textContent = format.toUpperCase();
     button.addEventListener("click", event => {
       event.stopPropagation();
-      if (event.isTrusted && selected) download(selected, format);
+      if (event.isTrusted) download(format);
     });
     menu.querySelector("div").append(button);
     options.push(button);
@@ -53,20 +54,39 @@
     for (const button of options) button.disabled = locked;
   }
 
-  async function download(track, format) {
-    if (pending.has(track.id)) return;
-    const waiting = "正在准备 " + format.toUpperCase() + "，请稍候…";
-    pending.set(track.id, waiting);
-    showStatus(waiting, true);
-    let message;
+  const bar = document.createElement("aside");
+  bar.id = "suno-batch-bar";
+  bar.setAttribute("aria-label", "批量下载");
+  bar.innerHTML = '<span aria-live="polite"></span><button type="button">批量下载</button><button type="button">清空</button>';
+  const [batchButton, clearButton] = bar.querySelectorAll("button");
+  batchButton.addEventListener("click", event => { if (event.isTrusted) open(batchButton, null); });
+  clearButton.addEventListener("click", () => { checked.clear(); updateSelection(); });
+
+  function updateSelection() {
+    for (const entry of mounted.values()) entry.checkbox.checked = checked.has(entry.track.id);
+    if (!checked.size) {
+      if (trigger === batchButton && menu.matches(":popover-open")) menu.hidePopover();
+      bar.remove();
+      return;
+    }
+    bar.querySelector("span").textContent = "已选 " + checked.size + " 首";
+    if (!bar.isConnected) document.body.append(bar);
+    if (trigger === batchButton) title.textContent = "批量下载 " + checked.size + " 首歌曲";
+  }
+
+  async function download(format) {
+    const tracks = selected ? [selected] : [...checked.values()];
+    if (opening || !tracks.length) return;
+    opening = true;
+    showStatus("正在打开保存窗口…", true);
     try {
-      const result = await chrome.runtime.sendMessage({ type: "inline-download", id: track.id, format });
-      message = result?.ok ? "已保存 " + format.toUpperCase() + " 文件。" : result?.error || "下载失败，请重试。";
+      const result = await chrome.runtime.sendMessage({ type: "open-save", tracks, format, batch: !selected });
+      if (!result?.ok) throw new Error(result?.error || "无法打开保存窗口。");
+      if (menu.matches(":popover-open")) menu.hidePopover();
     } catch {
-      message = "扩展连接已中断。请刷新 Suno 页面后重试。";
+      showStatus("无法打开保存窗口。请刷新 Suno 页面后重试。");
     } finally {
-      pending.delete(track.id);
-      if (selected?.id === track.id) showStatus(message);
+      opening = false;
     }
   }
 
@@ -90,8 +110,8 @@
     if (!menu.isConnected) document.body.append(menu);
     trigger = button;
     selected = track;
-    title.textContent = track.name || "下载这首歌";
-    showStatus(pending.get(track.id) || "选择格式后，歌曲 ID 将发送给 ai-suno.com。", pending.has(track.id));
+    title.textContent = track ? (track.name || "下载这首歌") : "批量下载 " + checked.size + " 首歌曲";
+    showStatus("所选歌曲将通过 ai-suno.com 解析。", opening);
     menu.showPopover();
     position();
     options.find(option => !option.disabled)?.focus({ preventScroll: true });
@@ -109,11 +129,23 @@
       button.className = "suno-single-download-trigger";
       button.textContent = "↓ 下载";
       button.setAttribute("aria-haspopup", "dialog");
-      entry = { button, track };
+      const controls = document.createElement("span");
+      controls.className = "suno-song-controls";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.title = "勾选以批量下载";
+      controls.append(checkbox, button);
+      entry = { button, checkbox, controls, track };
       mounted.set(host, entry);
-      for (const type of ["pointerdown", "pointerup", "mousedown", "mouseup", "keydown", "keyup", "dblclick"]) {
-        button.addEventListener(type, event => event.stopPropagation());
+      for (const type of ["pointerdown", "pointerup", "mousedown", "mouseup", "keydown", "keyup", "dblclick", "click"]) {
+        controls.addEventListener(type, event => event.stopPropagation());
       }
+      checkbox.addEventListener("change", event => {
+        if (!event.isTrusted) return;
+        if (checkbox.checked) checked.set(entry.track.id, entry.track);
+        else checked.delete(entry.track.id);
+        updateSelection();
+      });
       button.addEventListener("click", event => {
         event.preventDefault();
         event.stopPropagation();
@@ -122,11 +154,13 @@
     }
     if (entry.track.id !== track.id && entry.button === trigger && menu.matches(":popover-open")) menu.hidePopover();
     entry.track = track;
+    entry.checkbox.checked = checked.has(track.id);
+    entry.checkbox.setAttribute("aria-label", "选择 " + (track.name || "这首歌"));
     entry.button.setAttribute("aria-label", "下载 " + (track.name || "这首歌"));
     if (inside) {
-      if (entry.button.parentElement !== host) host.append(entry.button);
-    } else if (host.nextElementSibling !== entry.button) {
-      host.after(entry.button);
+      if (entry.controls.parentElement !== host) host.append(entry.controls);
+    } else if (host.nextElementSibling !== entry.controls) {
+      host.after(entry.controls);
     }
   }
 
@@ -153,9 +187,9 @@
       const heading = document.querySelector("#main-container h1, main h1") || document.querySelector("h1");
       if (heading) mount(heading, { id: current, name: labelOf(heading) }, false, seen);
     }
-    for (const [host, { button }] of mounted) {
+    for (const [host, { controls }] of mounted) {
       if (seen.has(host)) continue;
-      button.remove();
+      controls.remove();
       mounted.delete(host);
     }
     position();
@@ -178,7 +212,7 @@
       if (menu.contains(rec.target)) continue;
       if (rec.type === "attributes" || rec.target.parentElement?.closest(".clip-title-wrapper, h1") ||
           [...rec.addedNodes, ...rec.removedNodes].some(relevant) ||
-          [...rec.removedNodes].some(node => node.classList?.contains("suno-single-download-trigger"))) {
+          [...rec.removedNodes].some(node => node.classList?.contains("suno-song-controls"))) {
         schedule();
         break;
       }

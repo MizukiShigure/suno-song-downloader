@@ -20,3 +20,8 @@ button.suno-single-download-trigger:active { background: #404044; }
 #suno-single-download-menu button:disabled { opacity: .55; cursor: wait; }
 #suno-single-download-menu small { display: block; color: #b5b5ba; font-size: 12px; overflow-wrap: anywhere; }
 button.suno-single-download-trigger:focus-visible, #suno-single-download-menu button:focus-visible { outline: 2px solid #cacace; outline-offset: 2px; }
+.suno-song-controls { display: inline-flex; flex: none; align-items: center; align-self: center; gap: 3px; margin-inline-start: 4px; vertical-align: middle; }
+.suno-song-controls input[type=checkbox] { appearance: auto; accent-color: #a3a3ab; color-scheme: dark; width: 15px; height: 15px; margin: 0; cursor: pointer; }
+#suno-batch-bar { position: fixed; z-index: 2147483600; right: 16px; bottom: 100px; display: flex; gap: 10px; align-items: center; padding: 8px 12px; border: 1px solid #414146; border-radius: 14px; background: #1b1b1e; color: #f7f4ef; box-shadow: 0 4px 18px #0005; font: 600 13px/1.5 system-ui, sans-serif; }
+#suno-batch-bar button { padding: 5px 10px; border: 1px solid #454549; border-radius: 999px; color: inherit; background: #252529; cursor: pointer; }
+#suno-batch-bar button:hover { background: #333337; }
