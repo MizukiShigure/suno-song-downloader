@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Suno 单曲下载",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "minimum_chrome_version": "116",
-  "description": "在 Suno 歌名旁下载或勾选多首歌曲，保存 M4A、MP3 或 WAV，记住上次保存歌曲的位置。",
-  "permissions": ["activeTab", "storage"],
+  "description": "在 Suno 歌名旁直接另存为 M4A、MP3 或 WAV，也可以勾选多首歌曲保存到同一文件夹。",
+  "permissions": ["activeTab", "downloads", "offscreen"],
   "host_permissions": [
     "https://suno.com/*",
     "https://www.suno.com/*",
@@ -14,7 +14,7 @@
   "action": { "default_title": "保存 Suno 歌曲" },
   "content_scripts": [{
     "matches": ["https://suno.com/*", "https://www.suno.com/*"],
-    "js": ["inline.js"],
+    "js": ["batch.js", "inline.js"],
     "css": ["inline.css"]
   }],
   "icons": {

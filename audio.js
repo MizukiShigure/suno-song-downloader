@@ -1,11 +1,9 @@
 export function explain(error) {
-  if (error.name === "AbortError") return "已取消。";
-  if (error.name === "NotAllowedError") return "没有写入权限，请重新选择可保存的文件夹。";
   if (error.name === "TimeoutError") return "请求超时，请稍后重试。";
   if (error instanceof TypeError && error.message.includes("fetch")) {
     return "无法连接服务。请检查网络及扩展的网站访问权限，然后重试。";
   }
-  if (/cancel|USER_CANCELED/i.test(error.message)) return "已取消保存。";
+  if (/^(?:User cancel(?:ed|led)(?: the download)?\.?|USER_CANCELED)$/i.test(error.message)) return "浏览器已取消这次下载。";
   return error.message;
 }
 
@@ -32,4 +30,27 @@ export async function convert(blob, target, status = () => {}) {
   } finally {
     worker.terminate();
   }
+}
+
+export function waitForDownload(id) {
+  return new Promise((resolve, reject) => {
+    function check(state, reason) {
+      if (state !== "complete" && state !== "interrupted") return;
+      chrome.downloads.onChanged.removeListener(changed);
+      if (state === "complete") resolve();
+      else reject(new Error("下载中断（" + (reason || "未知原因") + "）。"));
+    }
+    function changed(delta) {
+      if (delta.id === id) check(delta.state?.current, delta.error?.current);
+    }
+    chrome.downloads.onChanged.addListener(changed);
+    // Small files may already be complete before the listener is attached.
+    chrome.downloads.search({ id }).then(([item]) => {
+      if (item) check(item.state, item.error);
+      else check("interrupted", "下载记录已移除");
+    }).catch(error => {
+      chrome.downloads.onChanged.removeListener(changed);
+      reject(error);
+    });
+  });
 }

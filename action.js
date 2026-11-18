@@ -1,4 +1,5 @@
 import { identify } from "./song.js";
+import { explain, waitForDownload } from "./audio.js";
 
 chrome.action.onClicked.addListener(tab => {
   const link = identify(tab.url);
@@ -7,34 +8,48 @@ chrome.action.onClicked.addListener(tab => {
   chrome.tabs.create({ url: page.href });
 });
 
-async function openSaveWindow(tracks, format, batch) {
-  const win = await chrome.windows.create({ url: "about:blank", type: "popup", width: 480, height: batch ? 540 : 330, focused: true });
-  const key = "save-window-" + win.id;
-  try {
-    const [tab] = await chrome.tabs.query({ windowId: win.id });
-    await chrome.storage.session.set({ [key]: { tracks, format, batch } });
-    await chrome.tabs.update(tab.id, { url: chrome.runtime.getURL("save.html") });
-  } catch (error) {
-    await chrome.storage.session.remove(key);
-    await chrome.windows.remove(win.id).catch(() => {});
-    throw error;
-  }
+const offscreenUrl = chrome.runtime.getURL("offscreen.html");
+let creating;
+
+async function ensureEncoder() {
+  const contexts = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"], documentUrls: [offscreenUrl] });
+  if (creating) return creating;
+  if (contexts.length) return;
+  creating = chrome.offscreen.createDocument({
+    url: "offscreen.html",
+    reasons: ["BLOBS", "WORKERS"],
+    justification: "在 Suno 页面下载选中的歌曲，按所选格式生成本地音频文件。"
+  }).finally(() => { creating = null; });
+  await creating;
 }
 
-chrome.windows.onRemoved.addListener(id => chrome.storage.session.remove("save-window-" + id));
-
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
-  if (message?.type !== "open-save" || sender.id !== chrome.runtime.id || !sender.tab || sender.frameId !== 0 ||
-      !["https://suno.com", "https://www.suno.com"].includes(sender.origin)) return;
-  const { tracks, format, batch } = message;
-  if (!["m4a", "mp3", "wav"].includes(format) || !Array.isArray(tracks) || !tracks.length ||
-      typeof batch !== "boolean" || (!batch && tracks.length !== 1)) return;
-  const songs = new Map();
-  for (const track of tracks) {
-    if (typeof track?.id !== "string" || identify(track.id)?.id !== track.id) return;
-    songs.set(track.id, { id: track.id, name: String(track.name || "").slice(0, 200) });
+  if (sender.id !== chrome.runtime.id) return;
+  let work;
+  if (["inline-download", "batch-ready"].includes(message?.type) && sender.tab && sender.frameId === 0 &&
+      ["https://suno.com", "https://www.suno.com"].includes(sender.origin)) {
+    if (message.type === "batch-ready") {
+      ensureEncoder().then(() => respond({ ok: true }), error => respond({ ok: false, error: explain(error) }));
+      return true;
+    }
+    const { id, format } = message;
+    if (typeof id !== "string" || identify(id)?.id !== id || !["m4a", "mp3", "wav"].includes(format)) return;
+    work = async () => {
+      await ensureEncoder();
+      const result = await chrome.runtime.sendMessage({ type: "encode-song", id, format });
+      if (!result?.ok) throw new Error(result?.error || "下载任务未完成，请重试。");
+    };
+  } else if (message?.type === "save-audio" && sender.url === offscreenUrl &&
+             typeof message.url === "string" && message.url.startsWith("blob:" + chrome.runtime.getURL(""))) {
+    work = async () => {
+      const id = await chrome.downloads.download({
+        url: message.url, filename: message.name, saveAs: true, conflictAction: "uniquify"
+      });
+      await waitForDownload(id);
+    };
+  } else {
+    return;
   }
-  openSaveWindow([...songs.values()], format, batch)
-    .then(() => respond({ ok: true }), error => respond({ ok: false, error: error.message }));
+  work().then(() => respond({ ok: true }), error => respond({ ok: false, error: explain(error) }));
   return true;
 });
