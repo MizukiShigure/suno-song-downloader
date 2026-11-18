@@ -1,0 +1,20 @@
+button.suno-single-download-trigger {
+  display: inline-flex; align-items: center; justify-content: center; align-self: flex-start;
+  width: max-content; flex: none; vertical-align: middle; margin: 0 4px; padding: 3px 8px;
+  border-radius: 12px; border: 1px solid #82988a; color: #153c2b; background: #d8eedc;
+  font: 600 12px/1.35 "Segoe UI", "Microsoft YaHei UI", sans-serif; white-space: nowrap;
+  cursor: pointer; position: relative; z-index: 1;
+}
+button.suno-single-download-trigger:hover { background: #bce3c5; }
+#suno-single-download-menu {
+  box-sizing: border-box; position: fixed; inset: auto; margin: 0; width: min(275px, calc(100vw - 16px));
+  padding: 14px; border: 1px solid #b7ccbf; border-radius: 12px; background: #f9fcf8; color: #203c2e;
+  box-shadow: 0 8px 28px #0004; font: 14px/1.45 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+#suno-single-download-menu strong { display: block; overflow-wrap: anywhere; max-height: 4.35em; overflow: auto; }
+#suno-single-download-menu .suno-single-download-formats { display: flex; gap: 6px; margin: 10px 0 8px; }
+#suno-single-download-menu button { flex: 1; padding: 5px 6px; border-radius: 6px; border: 1px solid #789782; background: #e4f1e5; color: #183e29; cursor: pointer; font: 650 13px/1.5 "Segoe UI", sans-serif; }
+#suno-single-download-menu button:hover { background: #c3e3c9; }
+#suno-single-download-menu button:disabled { opacity: .55; cursor: wait; }
+#suno-single-download-menu small { display: block; color: #475b4e; font-size: 12px; overflow-wrap: anywhere; }
+button.suno-single-download-trigger:focus-visible, #suno-single-download-menu button:focus-visible { outline: 2px solid #cc732c; outline-offset: 2px; }

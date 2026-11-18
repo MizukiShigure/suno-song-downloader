@@ -1,0 +1,41 @@
+:root {
+  font: 16px/1.55 "DM Sans", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  color: #28352f;
+  background: #eff3ed;
+  --accent: #235d43;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 640px; padding: clamp(44px, 12vh, 132px) 20px 48px; margin: auto; }
+header { display: flex; align-items: center; gap: 16px; margin: 0 0 26px; }
+header img { border-radius: 13px; }
+h1, h2, p { margin: 0; }
+h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.25; letter-spacing: -.035em; }
+.card { background: #fffef9; border: 1px solid #cad4c8; border-radius: 16px; padding: clamp(20px, 4vw, 32px); box-shadow: 0 8px 24px #253b2e09; }
+label, legend { font-size: 14px; font-weight: 650; }
+.entry { display: flex; gap: 8px; margin-top: 8px; }
+#link { flex: 1; min-width: 0; padding: 11px 13px; border: 1px solid #a2b2a4; border-radius: 8px; font: inherit; font-size: 15px; background: white; }
+button { border: 0; background: var(--accent); color: white; border-radius: 8px; padding: 11px 18px; font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; }
+button:hover { background: #17482f; }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, #link:focus-visible, input[type=radio]:focus-visible + span { outline: 3px solid #c27a32; outline-offset: 3px; }
+.note, #detail { margin-top: 8px; font-size: 13px; color: #58675e; }
+#result { margin-top: 24px; border-top: 1px solid #d9e1d7; padding-top: 22px; }
+.song h2 { font-size: 24px; line-height: 1.3; overflow-wrap: anywhere; }
+#detail { margin-top: 4px; }
+fieldset { border: 0; padding: 0; margin: 22px 0 18px; }
+legend { padding: 0 0 8px; }
+.formats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.formats label { position: relative; cursor: pointer; }
+.formats input { position: absolute; opacity: 0; }
+.formats span { display: grid; padding: 10px 12px; border: 1px solid #c5cfc5; border-radius: 8px; }
+.formats input:checked + span { border-color: var(--accent); background: #e6f1e4; box-shadow: inset 0 0 0 1px var(--accent); }
+.formats small { font-size: 12px; line-height: 1.5; color: #506357; font-weight: 400; }
+#save { width: 100%; }
+#status { margin-top: 16px; color: var(--accent); font-size: 14px; overflow-wrap: anywhere; }
+#status:empty { margin: 0; }
+#status.error { color: #993b30; }
+@media (max-width: 450px) {
+  .entry { flex-direction: column; }
+  .formats span { padding: 7px; }
+}

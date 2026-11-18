@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Suno 单曲下载",
+  "version": "1.1.0",
+  "minimum_chrome_version": "116",
+  "description": "在 Suno 歌名旁直接下载 M4A、MP3 或 WAV，也支持粘贴分享链接。",
+  "permissions": ["activeTab", "downloads", "offscreen"],
+  "host_permissions": [
+    "https://suno.com/*",
+    "https://www.suno.com/*",
+    "https://ai-suno.com/*",
+    "https://sunoaicdn.001235.xyz/*"
+  ],
+  "action": { "default_title": "保存 Suno 歌曲" },
+  "content_scripts": [{
+    "matches": ["https://suno.com/*", "https://www.suno.com/*"],
+    "js": ["inline.js"],
+    "css": ["inline.css"]
+  }],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": { "service_worker": "action.js", "type": "module" }
+}
